@@ -36,6 +36,7 @@
                     <li class="nav-item"><a class="nav-link js-scroll-trigger" href="https://www.linkedin.com/in/muhammad-riansyah-tohamba-242344108/">Experience</a></li>
                     <li class="nav-item"><a class="nav-link js-scroll-trigger" href="#education">Education</a></li>
                     <li class="nav-item"><a class="nav-link js-scroll-trigger" href="#skills">Skills</a></li>
+                    <li class="nav-item"><a class="nav-link js-scroll-trigger" href="#performa">Performa</a></li>
                     <!-- <li class="nav-item"><a class="nav-link js-scroll-trigger" href="#interests">Interests</a></li>
                     <li class="nav-item"><a class="nav-link js-scroll-trigger" href="#awards">Awards</a></li> -->
                 </ul>
@@ -189,6 +190,29 @@
                 </div>
             </section>
             <hr class="m-0" />
+            <!-- Skills-->
+            <section class="resume-section" id="performa">
+                <div class="resume-section-content">
+                    <h2 class="mb-5">Performa</h2>
+                    <div class="skillsPieChart" 
+                        data-values='{
+                        "SWEng": 4.5,
+                        "NLP": 3.0,
+                        "PHP":3.0,"Python":4.0,
+                        "Ruby":3.0,
+                        "Database":4.0,
+                        "Node.js":4.0
+                        }'
+                        data-width="300" data-height="300" 
+                        data-red="0" data-green="128" 
+                        data-blue="255">
+                        <div style="text-align: center;">
+                            <div class="chartCanvasWrap"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <hr class="m-0" />
             <!-- Interests-->
             <section class="resume-section" id="interests">
                 <div class="resume-section-content">
@@ -221,5 +245,9 @@
             document.getElementById("myWorkExp").innerHTML = calculateAge(new Date(2014, 7, 25));
                        
         </script>
+        <!------------------ JS Includes ------------------>
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+        <script src="js/jquery-radar-plus.js"></script>
+        <script type="text/javascript" src="js/main.js"></script>
     </body>
 </html>
