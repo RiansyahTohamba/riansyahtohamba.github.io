@@ -32,3 +32,20 @@ $(function() {
 //     <p><a target="_blank" href="https://riansyahtohamba.github.io/creative/chats/badri.html">Live Preview</a></p>
 // </div>
 
+// ngapain ya?
+// tiru dari creative
+// let jsonData = [
+//     { 
+//         name: 'Claes Wohlin', 
+//         mulaikenal: '2020',
+//         expertise :'Empirical Software Engineering',
+//         company: '-'
+//     },
+//     { 
+//         name: 'Ivar Jacobson', 
+//         mulaikenal: '2013',
+//         expertise :'UML',
+//         company: 'Ericson'
+//     }
+// ]
+
