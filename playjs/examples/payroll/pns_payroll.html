@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THR Payroll PNS</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0d1117; color: #e6edf3; font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
+
+/* Header */
+.header { background: linear-gradient(135deg, #1a3a5c 0%, #0d2137 100%);
+  padding: 20px 24px; border-bottom: 1px solid #21374f; }
+.header h1 { font-size: 1.3rem; color: #58a6ff; }
+.header p { font-size: .78rem; color: #8b949e; margin-top: 3px; }
+
+.container { padding: 20px 24px; max-width: 1200px; margin: 0 auto; }
+
+/* Summary Cards */
+.cards { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 20px; }
+.card { background: #161b22; border: 1px solid #21374f; border-radius: 10px;
+  padding: 14px 18px; flex: 1; min-width: 160px; }
+.card .c-label { font-size: .7rem; color: #8b949e; text-transform: uppercase; letter-spacing: .8px; }
+.card .c-val { font-size: 1.2rem; font-weight: 700; margin-top: 4px; }
+.card.blue .c-val { color: #58a6ff; }
+.card.green .c-val { color: #3fb950; }
+.card.yellow .c-val { color: #d29922; }
+.card.purple .c-val { color: #bc8cff; }
+
+/* Layout */
+.layout { display: flex; gap: 20px; flex-wrap: wrap; }
+.left { flex: 1; min-width: 300px; }
+.right { width: 310px; flex-shrink: 0; }
+
+/* Panel */
+.panel { background: #161b22; border: 1px solid #21374f; border-radius: 10px;
+  padding: 16px; margin-bottom: 16px; }
+.panel-title { font-size: .82rem; color: #58a6ff; text-transform: uppercase;
+  letter-spacing: 1px; margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+
+/* THR % inputs per jabatan */
+.jabatan-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.jabatan-label { flex: 1; font-size: .82rem; }
+.jabatan-label .badge { display: inline-block; font-size: .65rem; padding: 2px 7px;
+  border-radius: 10px; margin-left: 5px; font-weight: 600; }
+.inp-wrap { position: relative; }
+.inp-pct { width: 72px; background: #0d1117; border: 1px solid #30363d; color: #e6edf3;
+  border-radius: 6px; padding: 6px 24px 6px 8px; font-size: .85rem; text-align: right; }
+.inp-pct:focus { outline: none; border-color: #58a6ff; }
+.pct-sym { position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  color: #8b949e; font-size: .8rem; pointer-events: none; }
+
+/* Table */
+.tbl-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+thead tr { background: #1c2128; }
+th { padding: 10px 12px; text-align: left; color: #8b949e; font-weight: 600;
+  font-size: .72rem; text-transform: uppercase; letter-spacing: .6px;
+  border-bottom: 1px solid #21374f; white-space: nowrap; }
+th.right, td.right { text-align: right; }
+td { padding: 9px 12px; border-bottom: 1px solid #161b22; vertical-align: middle; }
+tbody tr:hover { background: #1c2128; }
+tbody tr:last-child td { border-bottom: none; }
+
+.badge-jab { display: inline-block; font-size: .65rem; padding: 2px 8px;
+  border-radius: 10px; font-weight: 600; white-space: nowrap; }
+.pct-cell { color: #d29922; font-weight: 600; }
+.thr-cell { color: #3fb950; }
+.total-cell { color: #58a6ff; font-weight: 700; }
+
+/* Footer row */
+tfoot tr { background: #1c2128; }
+tfoot td { padding: 10px 12px; font-weight: 700; border-top: 2px solid #21374f; }
+tfoot .ft-label { color: #8b949e; font-size: .75rem; }
+
+/* Add employee form */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+label.fl { font-size: .72rem; color: #8b949e; display: block; margin-bottom: 3px; }
+input.fi, select.fi {
+  width: 100%; background: #0d1117; border: 1px solid #30363d; color: #e6edf3;
+  border-radius: 6px; padding: 7px 10px; font-size: .82rem;
+}
+input.fi:focus, select.fi:focus { outline: none; border-color: #58a6ff; }
+.form-grid .full { grid-column: 1/-1; }
+.btn-add { width: 100%; background: #1f6feb; border: none; color: #fff;
+  padding: 9px; border-radius: 7px; cursor: pointer; font-weight: 600; font-size: .85rem;
+  margin-top: 10px; transition: background .2s; }
+.btn-add:hover { background: #388bfd; }
+.btn-del { background: none; border: 1px solid #3a1f1f; color: #f85149;
+  padding: 3px 8px; border-radius: 5px; cursor: pointer; font-size: .72rem; transition: .2s; }
+.btn-del:hover { background: #3a1f1f; }
+
+/* Print */
+@media print {
+  .right, .btn-add, .btn-del { display: none !important; }
+  body { background: #fff; color: #000; }
+  .header { background: #1a3a5c; }
+  .card, .panel, table { border: 1px solid #ccc; }
+}
+
+.export-row { display: flex; gap: 8px; margin-bottom: 14px; }
+.btn-sm { background: #161b22; border: 1px solid #30363d; color: #ccc;
+  padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: .75rem; transition: .2s; }
+.btn-sm:hover { border-color: #58a6ff; color: #58a6ff; }
+
+.divider { border: none; border-top: 1px solid #21374f; margin: 12px 0; }
+
+.empty-state { text-align: center; padding: 30px; color: #8b949e; font-size: .82rem; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🏛️ Sistem Penggajian THR – PNS</h1>
+  <p>Perhitungan Tunjangan Hari Raya berdasarkan Jabatan Fungsional / Struktural</p>
+</div>
+
+<div class="container">
+  <!-- Summary Cards -->
+  <div class="cards">
+    <div class="card blue">
+      <div class="c-label">Total Pegawai</div>
+      <div class="c-val" id="sumCount">0</div>
+    </div>
+    <div class="card green">
+      <div class="c-label">Total Gaji Pokok</div>
+      <div class="c-val" id="sumGaji">Rp 0</div>
+    </div>
+    <div class="card yellow">
+      <div class="c-label">Total THR</div>
+      <div class="c-val" id="sumThr">Rp 0</div>
+    </div>
+    <div class="card purple">
+      <div class="c-label">Total Gaji + THR</div>
+      <div class="c-val" id="sumTotal">Rp 0</div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- Left: Table -->
+    <div class="left">
+      <div class="panel">
+        <div class="panel-title">📋 Daftar Pegawai</div>
+        <div class="export-row">
+          <button class="btn-sm" id="btnPrint">🖨️ Print</button>
+          <button class="btn-sm" id="btnCSV">⬇️ Export CSV</button>
+        </div>
+        <div class="tbl-wrap">
+          <table id="empTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Nama Pegawai</th>
+                <th>NIP</th>
+                <th>Jabatan</th>
+                <th class="right">Gaji Pokok</th>
+                <th class="right">THR %</th>
+                <th class="right">THR (Rp)</th>
+                <th class="right">Gaji + THR</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="empBody">
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="4"><span class="ft-label">TOTAL</span></td>
+                <td class="right" id="ftGaji">—</td>
+                <td></td>
+                <td class="right thr-cell" id="ftThr">—</td>
+                <td class="right total-cell" id="ftTotal">—</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+          <div class="empty-state" id="emptyState">Belum ada data pegawai. Tambahkan di panel kanan.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Config + Add -->
+    <div class="right">
+      <!-- THR % per jabatan -->
+      <div class="panel">
+        <div class="panel-title">⚙️ Persentase THR per Jabatan</div>
+        <div id="jabatanConfig"></div>
+        <hr class="divider">
+        <div style="font-size:.7rem;color:#8b949e;line-height:1.6">
+          THR = Gaji Pokok × (% / 100)<br>
+          Ubah % → tabel otomatis terupdate
+        </div>
+      </div>
+
+      <!-- Add Employee -->
+      <div class="panel">
+        <div class="panel-title">➕ Tambah Pegawai</div>
+        <div class="form-grid">
+          <div class="full">
+            <label class="fl">Nama Lengkap</label>
+            <input class="fi" type="text" id="fName" placeholder="Dr. Budi Santoso, M.Pd">
+          </div>
+          <div>
+            <label class="fl">NIP</label>
+            <input class="fi" type="text" id="fNip" placeholder="198001012005011001">
+          </div>
+          <div>
+            <label class="fl">Jabatan</label>
+            <select class="fi" id="fJab"></select>
+          </div>
+          <div class="full">
+            <label class="fl">Gaji Pokok (Rp)</label>
+            <input class="fi" type="number" id="fGaji" placeholder="5000000" min="0" step="50000">
+          </div>
+        </div>
+        <button class="btn-add" id="btnAdd">+ Tambah Pegawai</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Data ───────────────────────────────────────────────────────
+const JABATAN = [
+  { id:'guru_besar',    label:'Guru Besar',             short:'GB',   color:'#bc8cff', bg:'#2d1f4e' },
+  { id:'lektor_kepala', label:'Lektor Kepala',           short:'LK',   color:'#58a6ff', bg:'#1a2d4e' },
+  { id:'lektor',        label:'Lektor',                  short:'LT',   color:'#3fb950', bg:'#1a3a2a' },
+  { id:'asisten_ahli',  label:'Asisten Ahli',            short:'AA',   color:'#d29922', bg:'#3a2d0a' },
+  { id:'ketua_jurusan', label:'Ketua Jurusan',           short:'KJ',   color:'#f0883e', bg:'#3a1f0a' },
+  { id:'kepala_prodi',  label:'Kepala Program Studi',    short:'KP',   color:'#ff7b72', bg:'#3a1010' },
+  { id:'sekretaris',    label:'Sekretaris Jurusan/Prodi',short:'SJ',   color:'#7ee787', bg:'#0a2a1a' },
+  { id:'staf_adm',      label:'Staf Administrasi',       short:'SA',   color:'#79c0ff', bg:'#0a1a2a' },
+  { id:'tendik',        label:'Tenaga Kependidikan',     short:'TK',   color:'#a5d6ff', bg:'#0a1a2a' },
+];
+
+// Default THR percentages per jabatan
+let thrPct = {
+  guru_besar: 100, lektor_kepala: 100, lektor: 100, asisten_ahli: 100,
+  ketua_jurusan: 120, kepala_prodi: 115, sekretaris: 110,
+  staf_adm: 90, tendik: 85
+};
+
+// Sample employees
+let employees = [
+  { id:1, name:'Prof. Dr. Ahmad Fauzi, M.Sc',    nip:'196501011990031001', jab:'guru_besar',    gaji:9500000 },
+  { id:2, name:'Dr. Siti Rahayu, M.Pd',           nip:'197003152000122001', jab:'lektor_kepala', gaji:7200000 },
+  { id:3, name:'Drs. Bambang Heru, M.T',          nip:'197512012005011002', jab:'lektor',        gaji:5800000 },
+  { id:4, name:'Rina Kusumawati, S.Pd, M.Si',     nip:'198506202010012003', jab:'asisten_ahli',  gaji:4600000 },
+  { id:5, name:'Dr. Hendra Wijaya, M.T',          nip:'197809102003121004', jab:'ketua_jurusan', gaji:8100000 },
+  { id:6, name:'Dr. Dewi Puspita, M.Kom',         nip:'198002152005012005', jab:'kepala_prodi',  gaji:7500000 },
+  { id:7, name:'Agus Salim, S.E',                 nip:'198811202012011006', jab:'staf_adm',      gaji:3200000 },
+  { id:8, name:'Yuni Astuti, A.Md',               nip:'199001052015042007', jab:'tendik',        gaji:2800000 },
+];
+let nextId = 9;
+
+// ── Helpers ────────────────────────────────────────────────────
+const rupiah = n => 'Rp ' + Math.round(n).toLocaleString('id-ID');
+const getJab = id => JABATAN.find(j => j.id === id);
+
+// ── Build jabatan config panel ─────────────────────────────────
+function buildConfig() {
+  const $c = $('#jabatanConfig').empty();
+  JABATAN.forEach(j => {
+    $c.append(`
+      <div class="jabatan-row">
+        <div class="jabatan-label">
+          <span class="badge-jab" style="color:${j.color};background:${j.bg}">${j.short}</span>
+          <span style="font-size:.78rem;margin-left:5px">${j.label}</span>
+        </div>
+        <div class="inp-wrap">
+          <input class="inp-pct thr-pct-inp" data-jab="${j.id}" type="number"
+            value="${thrPct[j.id]}" min="0" max="500" step="5">
+          <span class="pct-sym">%</span>
+        </div>
+      </div>
+    `);
+  });
+
+  // Populate jabatan select
+  const $sel = $('#fJab').empty();
+  JABATAN.forEach(j => $sel.append(`<option value="${j.id}">${j.label}</option>`));
+}
+
+// ── Render Table ───────────────────────────────────────────────
+function render() {
+  const $body = $('#empBody').empty();
+  let totGaji=0, totThr=0, totTotal=0;
+
+  if (!employees.length) {
+    $('#emptyState').show();
+  } else {
+    $('#emptyState').hide();
+    employees.forEach((e, i) => {
+      const j = getJab(e.jab);
+      const pct = thrPct[e.jab] || 0;
+      const thr = e.gaji * pct / 100;
+      const total = e.gaji + thr;
+      totGaji += e.gaji; totThr += thr; totTotal += total;
+
+      $body.append(`
+        <tr>
+          <td style="color:#8b949e">${i+1}</td>
+          <td><strong>${e.name}</strong></td>
+          <td style="color:#8b949e;font-size:.72rem">${e.nip}</td>
+          <td><span class="badge-jab" style="color:${j.color};background:${j.bg}">${j.label}</span></td>
+          <td class="right">${rupiah(e.gaji)}</td>
+          <td class="right pct-cell">${pct}%</td>
+          <td class="right thr-cell">${rupiah(thr)}</td>
+          <td class="right total-cell">${rupiah(total)}</td>
+          <td><button class="btn-del" data-id="${e.id}">hapus</button></td>
+        </tr>
+      `);
+    });
+  }
+
+  // Footer
+  $('#ftGaji').text(employees.length ? rupiah(totGaji) : '—');
+  $('#ftThr').text(employees.length ? rupiah(totThr) : '—');
+  $('#ftTotal').text(employees.length ? rupiah(totTotal) : '—');
+
+  // Cards
+  $('#sumCount').text(employees.length);
+  $('#sumGaji').text(rupiah(totGaji));
+  $('#sumThr').text(rupiah(totThr));
+  $('#sumTotal').text(rupiah(totTotal));
+}
+
+// ── Events ─────────────────────────────────────────────────────
+// THR % changed
+$(document).on('input', '.thr-pct-inp', function() {
+  const jab = $(this).data('jab');
+  thrPct[jab] = parseFloat($(this).val()) || 0;
+  render();
+});
+
+// Delete employee
+$(document).on('click', '.btn-del', function() {
+  const id = +$(this).data('id');
+  employees = employees.filter(e => e.id !== id);
+  render();
+});
+
+// Add employee
+$('#btnAdd').on('click', function() {
+  const name = $('#fName').val().trim();
+  const nip  = $('#fNip').val().trim();
+  const jab  = $('#fJab').val();
+  const gaji = parseFloat($('#fGaji').val());
+
+  if (!name) { alert('Nama tidak boleh kosong'); return; }
+  if (!gaji || gaji <= 0) { alert('Gaji pokok tidak valid'); return; }
+
+  employees.push({ id: nextId++, name, nip: nip||'-', jab, gaji });
+  $('#fName,#fNip,#fGaji').val('');
+  render();
+});
+
+// Print
+$('#btnPrint').on('click', () => window.print());
+
+// Export CSV
+$('#btnCSV').on('click', function() {
+  const rows = [['No','Nama','NIP','Jabatan','Gaji Pokok','THR %','THR (Rp)','Gaji+THR']];
+  employees.forEach((e,i) => {
+    const j = getJab(e.jab);
+    const pct = thrPct[e.jab]||0;
+    const thr = e.gaji*pct/100;
+    rows.push([i+1, e.name, e.nip, j.label, e.gaji, pct+'%', thr, e.gaji+thr]);
+  });
+  const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'thr_payroll.csv';
+  a.click();
+});
+
+// ── Init ───────────────────────────────────────────────────────
+buildConfig();
+render();
+</script>
+</body>
+</html>

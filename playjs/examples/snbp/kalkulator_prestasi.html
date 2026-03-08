@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>JavaScript Examples</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="layout">
+
+    <aside id="sidebar">
+        <h2>Examples</h2>
+        <div id="example-list"></div>
+    </aside>
+
+    <main>
+
+        <button id="toggle">☰</button>
+
+        <iframe id="viewer"></iframe>
+
+    </main>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="examples.js"></script>
+
+<script>
+
+function labelFromFile(file)
+{
+    let name = file.replace(".html","");
+    name = name.replaceAll("_"," ");
+    return name.replace(/\b\w/g, c => c.toUpperCase());
+}
+
+for (const group in examples)
+{
+    const section = $("<div class='group'>");
+
+    section.append("<h3>"+group+"</h3>");
+
+    const ul = $("<ul>");
+
+    examples[group].forEach(file => {
+
+        const li = $("<li>");
+
+        const link = $("<a href='#'>")
+            .text(labelFromFile(file))
+            .click(function(){
+
+                $("#viewer").attr("src","examples/"+group.toLowerCase().replaceAll(" ","_")+"/"+file);
+
+                $("#sidebar").addClass("hide");
+            });
+
+        li.append(link);
+        ul.append(li);
+
+    });
+
+    section.append(ul);
+    $("#example-list").append(section);
+}
+
+$("#toggle").click(function(){
+    $("#sidebar").toggleClass("hide");
+});
+
+</script>
+
+</body>
+</html>

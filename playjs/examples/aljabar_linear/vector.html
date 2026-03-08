@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Vector Space Explorer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0a0a18; color: #e0e0ff; font-family: 'Segoe UI', sans-serif; padding: 16px; }
+h1 { text-align: center; font-size: 1.3rem; color: #818cf8; margin-bottom: 4px; }
+p.sub { text-align: center; font-size: .78rem; color: #666; margin-bottom: 14px; }
+
+.layout { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+.panel { background: #12122a; border-radius: 12px; padding: 14px; }
+.panel h2 { font-size: .78rem; color: #818cf8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+
+canvas { border-radius: 8px; display: block; cursor: crosshair; }
+
+/* Tabs */
+.tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+.tab { background: #1e1e3f; border: 1px solid #333; color: #aaa;
+  padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: .78rem; transition: .2s; }
+.tab:hover { border-color: #818cf8; color: #fff; }
+.tab.active { background: #4338ca; border-color: #818cf8; color: #fff; }
+
+.section { display: none; }
+.section.active { display: block; }
+
+/* Inputs */
+label { font-size: .75rem; color: #888; display: block; margin-bottom: 3px; }
+.row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.vec-input { width: 58px; background: #0a0a18; border: 1px solid #333; color: #e0e0ff;
+  border-radius: 6px; padding: 5px; font-size: .85rem; text-align: center; }
+.vec-input:focus { outline: none; border-color: #818cf8; }
+.btn { background: #2d2d50; border: 1px solid #444; color: #ccc;
+  padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: .78rem; transition: .2s; }
+.btn:hover { background: #4338ca; color: #fff; border-color: #818cf8; }
+.btn-primary { background: #4338ca; border-color: #818cf8; color: #fff; padding: 7px 16px; }
+
+.info-box { background: #0a0a18; border-radius: 8px; padding: 10px; font-size: .75rem;
+  color: #aaa; margin-top: 10px; line-height: 1.7; min-height: 80px; }
+.info-box .val { color: #a5f3fc; font-weight: 600; }
+.info-box .label { color: #818cf8; }
+
+.color-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+
+/* Matrix input grid */
+.mat-grid { display: grid; gap: 5px; margin-bottom: 10px; }
+.mat-grid.m2 { grid-template-columns: repeat(2, 58px); }
+.mat-grid.m3 { grid-template-columns: repeat(3, 58px); }
+
+select { background: #0a0a18; border: 1px solid #333; color: #e0e0ff;
+  border-radius: 6px; padding: 5px 8px; font-size: .8rem; }
+
+.legend { font-size: .72rem; color: #777; margin-top: 8px; line-height: 1.8; }
+.legend span { font-weight: 600; }
+</style>
+</head>
+<body>
+<h1>⟨ Vector Space Explorer ⟩</h1>
+<p class="sub">Click canvas to place vectors • Interactive linear algebra visualizer</p>
+
+<div class="layout">
+
+  <!-- Canvas -->
+  <div class="panel">
+    <canvas id="cvs" width="420" height="420"></canvas>
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <!-- Controls -->
+  <div class="panel" style="width:280px">
+    <div class="tabs">
+      <div class="tab active" data-tab="vectors">Vectors</div>
+      <div class="tab" data-tab="transform">Transform</div>
+      <div class="tab" data-tab="subspace">Subspace</div>
+      <div class="tab" data-tab="gram">Gram-Schmidt</div>
+    </div>
+
+    <!-- VECTORS TAB -->
+    <div class="section active" id="tab-vectors">
+      <h2>Vector Operations</h2>
+      <label>Vector A <span style="color:#f472b6">●</span></label>
+      <div class="row">
+        <input class="vec-input" id="ax" value="3" type="number" step="0.5">
+        <input class="vec-input" id="ay" value="1" type="number" step="0.5">
+      </div>
+      <label>Vector B <span style="color:#34d399">●</span></label>
+      <div class="row">
+        <input class="vec-input" id="bx" value="1" type="number" step="0.5">
+        <input class="vec-input" id="by" value="3" type="number" step="0.5">
+      </div>
+      <div class="row" style="flex-wrap:wrap;gap:6px">
+        <button class="btn btn-primary" id="calcVec">Calculate</button>
+        <button class="btn" id="randVec">Random</button>
+        <button class="btn" id="clearVec">Clear</button>
+      </div>
+      <div class="info-box" id="vecInfo">Press Calculate to see results.</div>
+      <div style="margin-top:8px;font-size:.72rem;color:#555">
+        Tip: drag sliders or type values, then Calculate
+      </div>
+    </div>
+
+    <!-- TRANSFORM TAB -->
+    <div class="section" id="tab-transform">
+      <h2>Linear Transformation T(v) = Mv</h2>
+      <label>Matrix M (2×2)</label>
+      <div class="mat-grid m2">
+        <input class="vec-input" id="m00" value="1"><input class="vec-input" id="m01" value="0">
+        <input class="vec-input" id="m10" value="0"><input class="vec-input" id="m11" value="1">
+      </div>
+      <label>Presets</label>
+      <div class="row" style="flex-wrap:wrap;gap:5px;margin-bottom:10px">
+        <button class="btn" data-mat="rot45">Rot 45°</button>
+        <button class="btn" data-mat="rot90">Rot 90°</button>
+        <button class="btn" data-mat="scale">Scale 2×</button>
+        <button class="btn" data-mat="shear">Shear</button>
+        <button class="btn" data-mat="reflect">Reflect Y</button>
+        <button class="btn" data-mat="proj">Project X</button>
+      </div>
+      <button class="btn btn-primary" id="applyMat" style="width:100%">Apply Transform</button>
+      <div class="info-box" id="matInfo">Apply a matrix to see the transformation.</div>
+    </div>
+
+    <!-- SUBSPACE TAB -->
+    <div class="section" id="tab-subspace">
+      <h2>Span & Linear Independence</h2>
+      <label>Vector V1 <span style="color:#f472b6">●</span></label>
+      <div class="row">
+        <input class="vec-input" id="v1x" value="2"><input class="vec-input" id="v1y" value="1">
+      </div>
+      <label>Vector V2 <span style="color:#34d399">●</span></label>
+      <div class="row">
+        <input class="vec-input" id="v2x" value="1"><input class="vec-input" id="v2y" value="-1">
+      </div>
+      <label>Vector V3 <span style="color:#fbbf24">●</span> (test independence)</label>
+      <div class="row">
+        <input class="vec-input" id="v3x" value="3"><input class="vec-input" id="v3y" value="0">
+      </div>
+      <button class="btn btn-primary" id="calcSpan" style="width:100%;margin-bottom:8px">Analyze Span</button>
+      <div class="info-box" id="spanInfo">Press Analyze to check.</div>
+    </div>
+
+    <!-- GRAM-SCHMIDT TAB -->
+    <div class="section" id="tab-gram">
+      <h2>Gram-Schmidt Orthogonalization</h2>
+      <p style="font-size:.73rem;color:#666;margin-bottom:10px">Convert basis vectors into an orthonormal set</p>
+      <label>Vector U1 <span style="color:#f472b6">●</span></label>
+      <div class="row">
+        <input class="vec-input" id="u1x" value="3"><input class="vec-input" id="u1y" value="1">
+      </div>
+      <label>Vector U2 <span style="color:#fbbf24">●</span></label>
+      <div class="row">
+        <input class="vec-input" id="u2x" value="2"><input class="vec-input" id="u2y" value="2">
+      </div>
+      <button class="btn btn-primary" id="calcGram" style="width:100%;margin-bottom:8px">Orthogonalize</button>
+      <div class="info-box" id="gramInfo">Press Orthogonalize to compute.</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const cvs = $('#cvs')[0], ctx = cvs.getContext('2d');
+const W = cvs.width, H = cvs.height;
+const O = {x: W/2, y: H/2}; // origin
+const SCALE = 40; // pixels per unit
+
+// ── Utils ──────────────────────────────────────────────────────
+const toScreen = (x, y) => ({x: O.x + x*SCALE, y: O.y - y*SCALE});
+const toWorld  = (sx,sy) => ({x: (sx-O.x)/SCALE, y: -(sy-O.y)/SCALE});
+const dot   = (a,b) => a.x*b.x + a.y*b.y;
+const len   = v => Math.sqrt(dot(v,v));
+const norm  = v => { const l=len(v); return l?{x:v.x/l,y:v.y/l}:{x:0,y:0}; };
+const scale = (v,s) => ({x:v.x*s, y:v.y*s});
+const add   = (a,b) => ({x:a.x+b.x, y:a.y+b.y});
+const sub   = (a,b) => ({x:a.x-b.x, y:a.y-b.y});
+const proj  = (a,b) => { const d=dot(b,b); return d?scale(b, dot(a,b)/d):{x:0,y:0}; };
+const cross2D = (a,b) => a.x*b.y - a.y*b.x;
+const fmt   = n => (Math.round(n*1000)/1000).toString();
+
+// ── Grid Draw ──────────────────────────────────────────────────
+function drawGrid() {
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = '#0a0a18';
+  ctx.fillRect(0,0,W,H);
+
+  // Grid
+  ctx.strokeStyle = '#1a1a35'; ctx.lineWidth = 1;
+  for (let x=0; x<=W; x+=SCALE) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y=0; y<=H; y+=SCALE) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+  // Axes
+  ctx.strokeStyle = '#2a2a5a'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(0,O.y); ctx.lineTo(W,O.y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(O.x,0); ctx.lineTo(O.x,H); ctx.stroke();
+
+  // Tick labels
+  ctx.fillStyle = '#333'; ctx.font = '10px monospace'; ctx.textAlign = 'center';
+  for (let i=-5; i<=5; i++) {
+    if (!i) continue;
+    const p = toScreen(i, 0);
+    ctx.fillText(i, p.x, O.y+14);
+    ctx.fillText(-i, O.x-14, toScreen(0,i).y+4);
+  }
+  ctx.fillStyle = '#444'; ctx.font = '11px monospace';
+  ctx.fillText('x', W-10, O.y-6);
+  ctx.fillText('y', O.x+8, 10);
+}
+
+function drawArrow(x1,y1,x2,y2, color, width=2.5, label='', dashed=false) {
+  const s = toScreen(x1,y1), e = toScreen(x2,y2);
+  const dx=e.x-s.x, dy=e.y-s.y, ang=Math.atan2(dy,dx);
+  const hs = 10;
+
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = width;
+  if (dashed) ctx.setLineDash([6,4]);
+  ctx.beginPath(); ctx.moveTo(s.x,s.y); ctx.lineTo(e.x,e.y); ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(e.x, e.y);
+  ctx.lineTo(e.x - hs*Math.cos(ang-0.4), e.y - hs*Math.sin(ang-0.4));
+  ctx.lineTo(e.x - hs*Math.cos(ang+0.4), e.y - hs*Math.sin(ang+0.4));
+  ctx.closePath(); ctx.fill();
+
+  if (label) {
+    ctx.fillStyle = color; ctx.font = 'bold 13px monospace'; ctx.textAlign = 'left';
+    ctx.fillText(label, e.x+6, e.y-4);
+  }
+  ctx.restore();
+}
+
+function drawPoint(x,y,color,r=5) {
+  const p=toScreen(x,y);
+  ctx.beginPath(); ctx.arc(p.x,p.y,r,0,Math.PI*2);
+  ctx.fillStyle=color; ctx.fill();
+}
+
+function drawDashedLine(x1,y1,x2,y2,color) {
+  const s=toScreen(x1,y1), e=toScreen(x2,y2);
+  ctx.save(); ctx.setLineDash([5,4]);
+  ctx.strokeStyle=color; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(s.x,s.y); ctx.lineTo(e.x,e.y); ctx.stroke();
+  ctx.restore();
+}
+
+function drawSpan(v, color) {
+  if (!len(v)) return;
+  const n = norm(v);
+  const t = Math.max(W,H)/SCALE + 2;
+  const s = toScreen(-n.x*t, -n.y*t), e = toScreen(n.x*t, n.y*t);
+  ctx.save(); ctx.setLineDash([4,6]);
+  ctx.strokeStyle = color + '44'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(s.x,s.y); ctx.lineTo(e.x,e.y); ctx.stroke();
+  ctx.restore();
+}
+
+function drawAngleArc(v1, v2, color) {
+  const o = toScreen(0,0);
+  const a1 = Math.atan2(-v1.y, v1.x);
+  const a2 = Math.atan2(-v2.y, v2.x);
+  ctx.save(); ctx.strokeStyle=color; ctx.lineWidth=1.5; ctx.setLineDash([]);
+  ctx.beginPath(); ctx.arc(o.x, o.y, 28, a1, a2, false); ctx.stroke();
+  ctx.restore();
+}
+
+// ── Active tab state ───────────────────────────────────────────
+let activeTab = 'vectors';
+$('.tab').on('click', function() {
+  activeTab = $(this).data('tab');
+  $('.tab').removeClass('active');
+  $(this).addClass('active');
+  $('.section').removeClass('active');
+  $('#tab-'+activeTab).addClass('active');
+  render();
+});
+
+// ── VECTORS ────────────────────────────────────────────────────
+function renderVectors(calculate) {
+  const A = {x: +$('#ax').val()||0, y: +$('#ay').val()||0};
+  const B = {x: +$('#bx').val()||0, y: +$('#by').val()||0};
+  const S = add(A,B);
+
+  drawGrid();
+  // Parallelogram
+  drawDashedLine(A.x,A.y, S.x,S.y, '#34d399');
+  drawDashedLine(B.x,B.y, S.x,S.y, '#f472b6');
+  // Span lines
+  drawSpan(A,'#f472b6'); drawSpan(B,'#34d399');
+  // Vectors
+  drawArrow(0,0,B.x,B.y,'#34d399',2.5,'B');
+  drawArrow(0,0,A.x,A.y,'#f472b6',2.5,'A');
+  drawArrow(0,0,S.x,S.y,'#a78bfa',2.5,'A+B');
+  // Proj of A onto B
+  const pAB = proj(A,B);
+  drawArrow(0,0,pAB.x,pAB.y,'#fbbf24',2,'proj');
+  drawDashedLine(A.x,A.y,pAB.x,pAB.y,'#fbbf24');
+
+  if (calculate) {
+    const dotAB = dot(A,B);
+    const lA = len(A), lB = len(B);
+    const angle = (lA&&lB) ? Math.acos(Math.min(1,Math.max(-1,dotAB/(lA*lB))))*180/Math.PI : 0;
+    $('#vecInfo').html(`
+      <span class="label">|A|</span> = <span class="val">${fmt(lA)}</span>&nbsp;&nbsp;
+      <span class="label">|B|</span> = <span class="val">${fmt(lB)}</span><br>
+      <span class="label">A·B</span> = <span class="val">${fmt(dotAB)}</span>&nbsp;&nbsp;
+      <span class="label">∠(A,B)</span> = <span class="val">${fmt(angle)}°</span><br>
+      <span class="label">A+B</span> = <span class="val">(${fmt(S.x)}, ${fmt(S.y)})</span><br>
+      <span class="label">A×B (2D)</span> = <span class="val">${fmt(cross2D(A,B))}</span>
+      <span style="color:#555;font-size:.68rem"> (det, signed area)</span><br>
+      <span class="label">proj<sub>B</sub>(A)</span> = <span class="val">(${fmt(pAB.x)}, ${fmt(pAB.y)})</span>
+    `);
+  }
+  $('#legend').html(`
+    <span class="color-dot" style="background:#f472b6"></span>A &nbsp;
+    <span class="color-dot" style="background:#34d399"></span>B &nbsp;
+    <span class="color-dot" style="background:#a78bfa"></span>A+B &nbsp;
+    <span class="color-dot" style="background:#fbbf24"></span>proj<sub>B</sub>(A)
+  `);
+}
+
+$('#calcVec').on('click', () => renderVectors(true));
+$('#randVec').on('click', () => {
+  const r = () => (Math.round((Math.random()*8-4)*2)/2);
+  $('#ax').val(r()); $('#ay').val(r()); $('#bx').val(r()); $('#by').val(r());
+  renderVectors(true);
+});
+$('#clearVec').on('click', () => {
+  $('#ax,#ay,#bx,#by').val(0);
+  renderVectors(false);
+  $('#vecInfo').text('Vectors cleared.');
+});
+
+// ── TRANSFORM ─────────────────────────────────────────────────
+const MATS = {
+  rot45:   [Math.cos(Math.PI/4),-Math.sin(Math.PI/4), Math.sin(Math.PI/4), Math.cos(Math.PI/4)],
+  rot90:   [0,-1,1,0],
+  scale:   [2,0,0,2],
+  shear:   [1,1,0,1],
+  reflect: [-1,0,0,1],
+  proj:    [1,0,0,0],
+};
+
+$('[data-mat]').on('click', function() {
+  const m = MATS[$(this).data('mat')];
+  $('#m00').val(fmt(m[0])); $('#m01').val(fmt(m[1]));
+  $('#m10').val(fmt(m[2])); $('#m11').val(fmt(m[3]));
+});
+
+function matMul(m, v) {
+  return { x: m[0]*v.x + m[1]*v.y, y: m[2]*v.x + m[3]*v.y };
+}
+
+function renderTransform() {
+  const m = [$('#m00').val(), $('#m01').val(), $('#m10').val(), $('#m11').val()].map(Number);
+  const det = m[0]*m[3] - m[1]*m[2];
+
+  // Draw basis vectors before and after
+  const e1 = {x:1,y:0}, e2 = {x:0,y:1};
+  const te1 = matMul(m, e1), te2 = matMul(m, e2);
+
+  // Draw unit square (before)
+  const corners = [{x:0,y:0},{x:1,y:0},{x:1,y:1},{x:0,y:1}];
+  const tCorners = corners.map(c => matMul(m, c));
+
+  drawGrid();
+
+  // Original unit square
+  ctx.save(); ctx.setLineDash([4,4]); ctx.strokeStyle='#334'; ctx.lineWidth=1.5;
+  ctx.beginPath();
+  corners.forEach((c,i) => { const p=toScreen(c.x,c.y); i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y); });
+  ctx.closePath(); ctx.stroke();
+  ctx.restore();
+
+  // Transformed square (shaded)
+  ctx.save(); ctx.globalAlpha=.15;
+  ctx.fillStyle='#818cf8';
+  ctx.beginPath();
+  tCorners.forEach((c,i) => { const p=toScreen(c.x,c.y); i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y); });
+  ctx.closePath(); ctx.fill();
+  ctx.globalAlpha=1;
+  ctx.strokeStyle='#818cf8'; ctx.lineWidth=1.5;
+  ctx.beginPath();
+  tCorners.forEach((c,i) => { const p=toScreen(c.x,c.y); i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y); });
+  ctx.closePath(); ctx.stroke();
+  ctx.restore();
+
+  // Original basis
+  drawArrow(0,0,e1.x,e1.y,'#334',2,'e₁');
+  drawArrow(0,0,e2.x,e2.y,'#334',2,'e₂');
+  // Transformed basis
+  drawArrow(0,0,te1.x,te1.y,'#f472b6',2.5,'Me₁');
+  drawArrow(0,0,te2.x,te2.y,'#34d399',2.5,'Me₂');
+
+  const tr = m[0]+m[3];
+  $('#matInfo').html(`
+    <span class="label">det(M)</span> = <span class="val">${fmt(det)}</span>
+    <span style="color:#555;font-size:.68rem"> (area scale factor)</span><br>
+    <span class="label">tr(M)</span> = <span class="val">${fmt(tr)}</span><br>
+    <span class="label">Me₁</span> = <span class="val">(${fmt(te1.x)}, ${fmt(te1.y)})</span><br>
+    <span class="label">Me₂</span> = <span class="val">(${fmt(te2.x)}, ${fmt(te2.y)})</span><br>
+    ${Math.abs(det)<1e-9 ? '<span style="color:#f87171">⚠ Singular matrix — collapses space to a line or point</span>' : ''}
+    ${det<0 ? '<span style="color:#fbbf24">↩ det < 0 — orientation is flipped</span>' : ''}
+  `);
+  $('#legend').html(`
+    <span class="color-dot" style="background:#334"></span>Original basis/square &nbsp;
+    <span class="color-dot" style="background:#f472b6"></span>Me₁ &nbsp;
+    <span class="color-dot" style="background:#34d399"></span>Me₂ &nbsp;
+    <span class="color-dot" style="background:#818cf8"></span>Transformed area
+  `);
+}
+$('#applyMat').on('click', renderTransform);
+
+// ── SUBSPACE / SPAN ───────────────────────────────────────────
+function renderSpan() {
+  const v1={x:+$('#v1x').val()||0, y:+$('#v1y').val()||0};
+  const v2={x:+$('#v2x').val()||0, y:+$('#v2y').val()||0};
+  const v3={x:+$('#v3x').val()||0, y:+$('#v3y').val()||0};
+
+  drawGrid();
+
+  // Span lines
+  drawSpan(v1,'#f472b6'); drawSpan(v2,'#34d399');
+
+  // Express v3 in terms of v1, v2 if possible (solve 2x2 system)
+  const det12 = cross2D(v1,v2);
+  let inSpan = false, c1=0, c2=0;
+  if (Math.abs(det12) > 1e-9) {
+    c1 = cross2D(v3,v2)/det12;
+    c2 = cross2D(v1,v3)/det12;
+    const check = add(scale(v1,c1), scale(v2,c2));
+    inSpan = Math.abs(check.x-v3.x)<1e-6 && Math.abs(check.y-v3.y)<1e-6;
+  }
+
+  // Draw parallelogram of c1*v1 + c2*v2 if in span
+  if (inSpan) {
+    const p1 = scale(v1,c1), p2 = scale(v2,c2);
+    drawDashedLine(0,0,p1.x,p1.y,'#f472b6');
+    drawDashedLine(p1.x,p1.y,v3.x,v3.y,'#34d399');
+  }
+
+  drawArrow(0,0,v1.x,v1.y,'#f472b6',2.5,'V1');
+  drawArrow(0,0,v2.x,v2.y,'#34d399',2.5,'V2');
+  drawArrow(0,0,v3.x,v3.y,'#fbbf24',2.5,'V3');
+
+  const li = Math.abs(det12) > 1e-9;
+  $('#spanInfo').html(`
+    <span class="label">det(V1,V2)</span> = <span class="val">${fmt(det12)}</span><br>
+    <span class="label">V1 & V2 lin. indep.?</span> <span class="val" style="color:${li?'#34d399':'#f87171'}">${li?'✔ YES — span ℝ²':'✘ NO — same direction'}</span><br>
+    <span class="label">V3 in span(V1,V2)?</span> <span class="val" style="color:${inSpan?'#34d399':'#f87171'}">${inSpan?`✔ YES: ${fmt(c1)}·V1 + ${fmt(c2)}·V2`:'✘ NO (would need ℝ³)'}</span><br>
+    ${!li&&inSpan?'<span style="color:#fbbf24">V3 is on the same line (1D subspace)</span>':''}
+  `);
+  $('#legend').html(`
+    <span class="color-dot" style="background:#f472b6"></span>V1 span &nbsp;
+    <span class="color-dot" style="background:#34d399"></span>V2 span &nbsp;
+    <span class="color-dot" style="background:#fbbf24"></span>V3 (test vector)
+  `);
+}
+$('#calcSpan').on('click', renderSpan);
+
+// ── GRAM-SCHMIDT ──────────────────────────────────────────────
+function renderGram() {
+  const u1={x:+$('#u1x').val()||0, y:+$('#u1y').val()||0};
+  const u2={x:+$('#u2x').val()||0, y:+$('#u2y').val()||0};
+
+  // e1 = u1/|u1|
+  const e1 = norm(u1);
+  // e2 = u2 - proj_e1(u2), normalized
+  const p = proj(u2, u1);
+  const u2perp = sub(u2, p);
+  const e2 = norm(u2perp);
+
+  drawGrid();
+
+  drawSpan(u1,'#f472b6'); drawSpan(u2,'#fbbf24');
+
+  // Original vectors
+  drawArrow(0,0,u1.x,u1.y,'#f472b6',2,'U1');
+  drawArrow(0,0,u2.x,u2.y,'#fbbf24',2,'U2');
+
+  // Projection component
+  drawArrow(0,0,p.x,p.y,'#888',1.5,'proj',true);
+  drawDashedLine(u2.x,u2.y,p.x,p.y,'#aaa');
+
+  // Orthonormal result
+  const SC = 3; // scale for display
+  drawArrow(0,0,e1.x*SC,e1.y*SC,'#818cf8',3,'e₁');
+  drawArrow(0,0,e2.x*SC,e2.y*SC,'#a5f3fc',3,'e₂');
+
+  // Right-angle mark at origin if orthogonal
+  if (len(u2perp)>1e-9) {
+    const a=0.3, p1=add(scale(e1,a), scale(e2,a));
+    const s0=toScreen(0,0), se1=toScreen(e1.x*a, e1.y*a), se2=toScreen(e2.x*a, e2.y*a), sp=toScreen(p1.x*a, p1.y*a);
+    ctx.save(); ctx.strokeStyle='#555'; ctx.lineWidth=1.2; ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(se1.x,se1.y); ctx.lineTo(sp.x,sp.y); ctx.lineTo(se2.x,se2.y); ctx.stroke();
+    ctx.restore();
+  }
+
+  const dotCheck = dot(e1,e2);
+  const isOrtho = Math.abs(dotCheck)<1e-9;
+  $('#gramInfo').html(`
+    <span class="label">e₁</span> = <span class="val">(${fmt(e1.x)}, ${fmt(e1.y)})</span>  |e₁|=${fmt(len(e1))}<br>
+    <span class="label">e₂</span> = <span class="val">(${fmt(e2.x)}, ${fmt(e2.y)})</span>  |e₂|=${fmt(len(e2))}<br>
+    <span class="label">e₁·e₂</span> = <span class="val">${fmt(dotCheck)}</span>
+    <span style="color:${isOrtho?'#34d399':'#f87171'}">${isOrtho?' ✔ orthogonal':' ✘ not orthogonal'}</span><br>
+    <span style="font-size:.68rem;color:#555">Displayed at 3× scale for visibility</span>
+  `);
+  $('#legend').html(`
+    <span class="color-dot" style="background:#f472b6"></span>U1 &nbsp;
+    <span class="color-dot" style="background:#fbbf24"></span>U2 &nbsp;
+    <span class="color-dot" style="background:#818cf8"></span>e₁ (ortho) &nbsp;
+    <span class="color-dot" style="background:#a5f3fc"></span>e₂ (ortho)
+  `);
+}
+$('#calcGram').on('click', renderGram);
+
+// ── Global render ──────────────────────────────────────────────
+function render() {
+  if (activeTab==='vectors')   renderVectors(false);
+  if (activeTab==='transform') renderTransform();
+  if (activeTab==='subspace')  renderSpan();
+  if (activeTab==='gram')      renderGram();
+}
+
+// Initial render
+renderVectors(true);
+</script>
+</body>
+</html>

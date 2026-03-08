@@ -1,0 +1,52 @@
+body{
+    margin:0;
+    font-family:Arial;
+}
+
+.layout{
+    display:flex;
+    height:100vh;
+}
+
+aside{
+    width:260px;
+    background:#2c3e50;
+    color:white;
+    padding:20px;
+    overflow:auto;
+}
+
+aside h2{
+    margin-top:0;
+}
+
+aside a{
+    color:#ecf0f1;
+    text-decoration:none;
+}
+
+aside li{
+    margin:6px 0;
+}
+
+main{
+    flex:1;
+    position:relative;
+}
+
+iframe{
+    width:100%;
+    height:100%;
+    border:none;
+}
+
+#toggle{
+    position:absolute;
+    top:10px;
+    left:10px;
+    z-index:10;
+}
+
+.hide{
+    display:none;
+}
