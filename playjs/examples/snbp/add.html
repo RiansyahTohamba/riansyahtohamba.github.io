@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Tambah Camaba</title>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<style>
+input{
+width:200px;
+margin-bottom:5px;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>Input Nilai Camaba</h2>
+
+Nama<br>
+<input id="nama"><br>
+
+Prestasi<br>
+<input id="prestasi" type="number"><br>
+
+Portfolio<br>
+<input id="portfolio" type="number"><br>
+
+Rapor<br>
+<input id="rapor" type="number"><br>
+
+Mapel 1<br>
+<input id="mapel1" type="number"><br>
+
+Mapel 2<br>
+<input id="mapel2" type="number"><br>
+
+<br>
+
+<button id="hitung">Hitung Nilai Akhir</button>
+
+<h3>Nilai Akhir : <span id="hasil">0</span></h3>
+
+<br>
+
+<button id="simpan">Tambah ke List</button>
+
+<script>
+
+function hitungNilai(){
+
+    let prestasi = parseFloat($("#prestasi").val()) || 0
+    let portfolio = parseFloat($("#portfolio").val()) || 0
+    let rapor = parseFloat($("#rapor").val()) || 0
+    let mapel1 = parseFloat($("#mapel1").val()) || 0
+    let mapel2 = parseFloat($("#mapel2").val()) || 0
+
+    // contoh formula
+    let nilai =
+        (prestasi * 0.2) +
+        (portfolio * 0.2) +
+        (rapor * 0.3) +
+        (mapel1 * 0.15) +
+        (mapel2 * 0.15)
+
+    $("#hasil").text(nilai.toFixed(2))
+
+    return nilai
+
+}
+
+$("#hitung").click(function(){
+    hitungNilai()
+})
+
+$("#simpan").click(function(){
+
+    let nilai = hitungNilai()
+
+    let camaba = {
+        nama: $("#nama").val(),
+        prestasi: $("#prestasi").val(),
+        portfolio: $("#portfolio").val(),
+        rapor: $("#rapor").val(),
+        mapel1: $("#mapel1").val(),
+        mapel2: $("#mapel2").val(),
+        nilai_akhir: nilai.toFixed(2)
+    }
+
+    let list = JSON.parse(localStorage.getItem("camaba")) || []
+
+    list.push(camaba)
+
+    localStorage.setItem("camaba", JSON.stringify(list))
+
+    window.location="index.html"
+
+})
+
+</script>
+
+</body>
+</html>

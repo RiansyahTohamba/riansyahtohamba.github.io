@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Simulasi Kelulusan</title>
+
+<style>
+    body{
+font-family:Arial;
+margin:30px;
+}
+
+table{
+border-collapse:collapse;
+width:100%;
+}
+
+th,td{
+border:1px solid #ccc;
+padding:6px;
+}
+
+tr:nth-child(even){
+background:#f7f7f7;
+}
+
+.rekomendasi{
+background:#ffeeba;
+}
+
+.kuota-ok{
+color:green;
+}
+
+.kuota-warning{
+color:orange;
+}
+
+.kuota-full{
+color:red;
+font-weight:bold;
+}
+
+#previewBox{
+margin-top:20px;
+padding:10px;
+border:1px solid #ccc;
+}
+</style>
+
+</head>
+<body>
+
+<h2>Seleksi Peserta Lulus</h2>
+
+<table id="tbl">
+<thead>
+<tr>
+<th></th>
+<th>Nama</th>
+<th>Sekolah</th>
+<th>Ranking</th>
+<th>Prodi</th>
+</tr>
+</thead>
+
+<tbody id="tbody"></tbody>
+
+</table>
+
+<div id="kuotaPanel"></div>
+
+<button id="previewBtn">Preview Kelulusan</button>
+
+<div id="previewBox"></div>
+
+<script >
+    // DATA PENDAFTAR SIMULASI
+const pendaftar = [
+
+{id:1,nama:"Andi",sekolah:"SMAN1",ranking:1,prodi:"INF"},
+{id:2,nama:"Budi",sekolah:"SMAN1",ranking:2,prodi:"INF"},
+{id:3,nama:"Citra",sekolah:"SMAN1",ranking:3,prodi:"INF"},
+{id:4,nama:"Dedi",sekolah:"SMAN1",ranking:4,prodi:"INF"},
+
+{id:5,nama:"Eka",sekolah:"SMAN2",ranking:1,prodi:"HUK"},
+{id:6,nama:"Fajar",sekolah:"SMAN2",ranking:2,prodi:"HUK"},
+{id:7,nama:"Gina",sekolah:"SMAN2",ranking:3,prodi:"HUK"}
+
+]
+
+// KUOTA PRODI
+const prodiKuota = {
+INF:3,
+HUK:2
+}
+
+let pesertaDipilih = []
+
+renderTable()
+renderKuota()
+
+// =======================
+// RENDER TABLE
+// =======================
+
+function renderTable(){
+
+let tbody = document.getElementById("tbody")
+
+pendaftar.forEach(p=>{
+
+let tr = document.createElement("tr")
+
+tr.innerHTML = `
+<td><input type="checkbox" class="check"></td>
+<td>${p.nama}</td>
+<td>${p.sekolah}</td>
+<td>${p.ranking}</td>
+<td>${p.prodi}</td>
+`
+
+tr.querySelector("input").addEventListener("change",e=>{
+togglePeserta(e,p)
+})
+
+tbody.appendChild(tr)
+
+})
+
+}
+
+// =======================
+// CHECKLIST COLLECTION
+// =======================
+
+function togglePeserta(e,data){
+
+if(e.target.checked){
+
+pesertaDipilih.push(data)
+
+}else{
+
+pesertaDipilih = pesertaDipilih.filter(x=>x.id!==data.id)
+
+}
+
+cekKuota()
+
+}
+
+// =======================
+// CEK KUOTA REALTIME
+// =======================
+
+function cekKuota(){
+
+let count = {}
+
+pesertaDipilih.forEach(p=>{
+
+if(!count[p.prodi])
+count[p.prodi]=0
+
+count[p.prodi]++
+
+})
+
+document.querySelectorAll("#kuotaPanel div").forEach(d=>{
+
+let prodi = d.dataset.prodi
+let kuota = prodiKuota[prodi]
+let used = count[prodi] || 0
+
+let sisa = kuota-used
+
+d.innerHTML = `${prodi} : ${used}/${kuota}`
+
+d.className=""
+
+if(sisa>1) d.classList.add("kuota-ok")
+else if(sisa==1) d.classList.add("kuota-warning")
+else d.classList.add("kuota-full")
+
+})
+
+}
+
+// =======================
+// PANEL KUOTA
+// =======================
+
+function renderKuota(){
+
+let panel = document.getElementById("kuotaPanel")
+
+for(let p in prodiKuota){
+
+let div = document.createElement("div")
+
+div.dataset.prodi = p
+div.innerHTML = `${p}:0/${prodiKuota[p]}`
+
+panel.appendChild(div)
+
+}
+
+}
+
+// =======================
+// RULE RANKING SEKOLAH
+// =======================
+
+function ruleRanking(){
+
+let sekolah = {}
+
+pesertaDipilih.forEach(p=>{
+
+if(!sekolah[p.sekolah])
+sekolah[p.sekolah]=[]
+
+sekolah[p.sekolah].push(p.ranking)
+
+})
+
+for(let s in sekolah){
+
+let ranks = sekolah[s].sort()
+
+let max = Math.max(...ranks)
+
+for(let i=1;i<max;i++){
+
+if(!ranks.includes(i)){
+
+rekomendasi(s,i)
+
+alert(
+"Ranking "+max+
+" tidak boleh sebelum ranking "+i+
+" dari sekolah "+s
+)
+
+return false
+
+}
+
+}
+
+}
+
+return true
+
+}
+
+// =======================
+// HIGHLIGHT REKOMENDASI
+// =======================
+
+function rekomendasi(sekolah,ranking){
+
+document.querySelectorAll("#tbl tbody tr").forEach((tr,i)=>{
+
+let p = pendaftar[i]
+
+if(p.sekolah==sekolah && p.ranking==ranking){
+
+tr.classList.add("rekomendasi")
+
+}
+
+})
+
+}
+
+// =======================
+// PREVIEW
+// =======================
+
+document.getElementById("previewBtn").onclick=function(){
+
+if(!ruleRanking())
+return
+
+let box = document.getElementById("previewBox")
+
+box.innerHTML="<h3>Preview Peserta Lulus</h3>"
+
+pesertaDipilih.forEach(p=>{
+
+box.innerHTML += `${p.nama} - ${p.prodi}<br>`
+
+})
+
+}
+</script>
+
+</body>
+</html>

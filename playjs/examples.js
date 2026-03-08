@@ -12,6 +12,7 @@ const examples = {
     ],
     "SNBP": [
         "kalkulator_prestasi.html",
-        "distribusi_daerah.html"
+        "distribusi_daerah.html",
+        "set_lulus.html",
     ]
 };

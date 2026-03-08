@@ -1,75 +1,106 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>JavaScript Examples</title>
-<link rel="stylesheet" href="style.css">
+<meta charset="utf-8">
+<title>Daftar Camaba SNBP</title>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<style>
+table{
+    border-collapse: collapse;
+    width:100%;
+}
+th,td{
+    border:1px solid #ccc;
+    padding:6px;
+}
+tr:nth-child(even){
+    background:#f2f2f2;
+}
+button{
+    padding:6px 10px;
+}
+</style>
+
 </head>
 
 <body>
 
-<div class="layout">
+<h2>Daftar Camaba</h2>
 
-    <aside id="sidebar">
-        <h2>Examples</h2>
-        <div id="example-list"></div>
-    </aside>
+<button onclick="window.location='add.html'">Tambah Mahasiswa</button>
 
-    <main>
+<table id="tableCamaba">
 
-        <button id="toggle">☰</button>
+<thead>
+<tr>
+<th>No</th>
+<th>Nama</th>
+<th>Prestasi</th>
+<th>Portfolio</th>
+<th>Rapor</th>
+<th>Mapel1</th>
+<th>Mapel2</th>
+<th>Nilai Akhir</th>
+</tr>
+</thead>
 
-        <iframe id="viewer"></iframe>
+<tbody>
+</tbody>
 
-    </main>
+</table>
 
-</div>
+<br>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-<script src="examples.js"></script>
+<button id="submitAll">Finalisasi & Submit</button>
 
 <script>
 
-function labelFromFile(file)
-{
-    let name = file.replace(".html","");
-    name = name.replaceAll("_"," ");
-    return name.replace(/\b\w/g, c => c.toUpperCase());
+let listCamaba = JSON.parse(localStorage.getItem('camaba')) || []
+
+function renderTable(){
+
+    let html = ""
+
+    listCamaba.forEach(function(row,i){
+
+        html += `
+        <tr>
+        <td>${i+1}</td>
+        <td>${row.nama}</td>
+        <td>${row.prestasi}</td>
+        <td>${row.portfolio}</td>
+        <td>${row.rapor}</td>
+        <td>${row.mapel1}</td>
+        <td>${row.mapel2}</td>
+        <td>${row.nilai_akhir}</td>
+        </tr>
+        `
+
+    })
+
+    $("#tableCamaba tbody").html(html)
+
 }
 
-for (const group in examples)
-{
-    const section = $("<div class='group'>");
+renderTable()
 
-    section.append("<h3>"+group+"</h3>");
+$("#submitAll").click(function(){
 
-    const ul = $("<ul>");
+    $.post("handler.php",{
+        data: JSON.stringify(listCamaba)
+    },function(res){
 
-    examples[group].forEach(file => {
+        alert("Data terkirim")
 
-        const li = $("<li>");
+        localStorage.removeItem("camaba")
 
-        const link = $("<a href='#'>")
-            .text(labelFromFile(file))
-            .click(function(){
+        location.reload()
 
-                $("#viewer").attr("src","examples/"+group.toLowerCase().replaceAll(" ","_")+"/"+file);
+    })
 
-                $("#sidebar").addClass("hide");
-            });
-
-        li.append(link);
-        ul.append(li);
-
-    });
-
-    section.append(ul);
-    $("#example-list").append(section);
-}
-
-$("#toggle").click(function(){
-    $("#sidebar").toggleClass("hide");
-});
+})
 
 </script>
 
